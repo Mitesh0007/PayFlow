@@ -29,9 +29,7 @@ COPY apps/api/prisma.config.ts apps/api/prisma.config.ts
 COPY apps/api/src apps/api/src
 
 WORKDIR /app/apps/api
-
-RUN bunx prisma generate --schema prisma/schema.prisma
-
+RUN bun run prisma:generate
 EXPOSE 8095
 
 CMD ["bun", "run", "src/server.ts"]

@@ -3,25 +3,25 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
-  
-   "scripts": {
+  "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "bun run src/server.ts",
     "typecheck": "tsc --noEmit",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev"
   },
-
   "devDependencies": {
     "@types/bun": "latest",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.3",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "prisma": "7.0.0"
   },
   "peerDependencies": {
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@prisma/client": "7.0.0",
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
     "pg": "^8.23.0",
