@@ -1,0 +1,72 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+model IdempotencyKey {
+  merchantId     String    @map("merchant_id")
+  key            String
+  status         String
+  requestHash    String    @map("request_hash")
+  responseBody   Json?     @map("response_body")
+  responseStatus Int?      @map("response_status")
+  lockedAt       DateTime  @default(now()) @map("locked_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(6)
+
+  @@id([merchantId, key])
+  @@map("idempotency_keys")
+}
+
+model Payment {
+  id             String   @id
+  idempotencyKey String   @map("idempotency_key")
+  amount         BigInt
+  currency       String
+  status         String
+  merchantId     String   @map("merchant_id")
+  customerId     String   @map("customer_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  ledgerEntries LedgerEntry[]
+
+  @@unique([merchantId, idempotencyKey])
+  @@index([createdAt(sort: Desc)])
+  @@map("payments")
+}
+
+model LedgerEntry {
+  id        String   @id
+  paymentId String   @map("payment_id")
+  account   String
+  amount    BigInt
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@map("ledger_entries")
+}
+
+model WebhookEvent {
+  id             String    @id
+  paymentId      String    @map("payment_id")
+  type           String
+  payload        Json
+  status         String    @default("pending")
+  attempts       Int       @default(0)
+  nextAttemptAt  DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  lastError      String?   @map("last_error")
+  responseStatus Int?      @map("response_status")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deliveredAt    DateTime? @map("delivered_at") @db.Timestamptz(6)
+
+  @@index([status, nextAttemptAt])
+  @@map("webhook_events")
+}

@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: payflow
+      POSTGRES_PASSWORD: payflow
+      POSTGRES_DB: payflow
+    ports:
+      - "5434:5432"
+    volumes:
+      - payflow-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payflow -d payflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://payflow:payflow@postgres:5432/payflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["bunx", "prisma", "migrate", "deploy", "--schema", "prisma/schema.prisma"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://payflow:payflow@postgres:5432/payflow
+      PORT: 8095
+      FRONTEND_ORIGIN: http://localhost:3000
+      WEBHOOK_SECRET: dev-secret-change-me
+      WEBHOOK_TARGET_URL: http://api:8095/webhooks/payflow
+    ports:
+      - "8095:8095"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:8095/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8095
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8095
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  payflow-postgres-data:
