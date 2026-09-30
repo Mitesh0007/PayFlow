@@ -15,7 +15,7 @@ FROM oven/bun:1 AS runtime
 WORKDIR /app
 
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=dependencies /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/package.json ./package.json
 COPY --from=dependencies /app/bun.lock ./bun.lock
 COPY --from=dependencies /app/turbo.json ./turbo.json
