@@ -7,7 +7,7 @@ COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages ./packages
 
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --linker hoisted
 
 
 FROM oven/bun:1 AS runtime
